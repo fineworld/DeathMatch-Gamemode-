@@ -1,4 +1,4 @@
-
+// HI
 "use strict";
 
 let Utility = module.exports;
@@ -139,8 +139,9 @@ Utility.adminMessage = (message, opt_color) => {
   	if(PlayerInfo[player.name].adminlvl >= 1) {
     	player.SendChatMessage(message, opt_color);
 	}
-}
+  }
 };
+
 Utility.print = (msg) => {
   let fmsg = Utility.timestamp() + " " + msg;
   console.log(fmsg);
@@ -178,6 +179,25 @@ Utility.isInArray = (value, array) => {
   else return false;
 
 };
+
+Utility.sphere = class Sphere { // By Tirus
+
+    constructor(x, y, z, opt_radius) {
+	    this.x = x;
+	    this.y = y;
+	    this.z = z;
+	    this.radius = opt_radius || 1;
+    }
+
+};
+
+Utility.sphere.prototype.inRangeOfPoint = function(position) { // By Tirus
+
+	return (Math.pow((position.x - this.x), 2) +
+            Math.pow((position.y - this.y), 2) +
+            Math.pow((position.z - this.z), 2) < Math.pow(this.radius, 2));
+}
+
 // ------------  Vehicle spawn -----------//
 
 Utility.VehicleSpawn = function(model, x, y, z, rotation) {
@@ -198,52 +218,57 @@ Utility.VehicleSpawn = function(model, x, y, z, rotation) {
   	return vehicle;
 }
 
-Utility.LoadVehicles = (dbconnection) => {
 
-  let connection = dbconnection;
-
-  let SQLQuery = "SELECT * FROM cars";
-
-  connection.query(SQLQuery, function(err, result) {
-  console.log("Loading vehicles...");
-    if(err) {
-      gm.utility.print("An error ocurred trying to load a vehicle");
-      gm.utility.print("QUERY: " + SQLQuery);
-      gm.utility.print("[ERROR]: " + err);
-    } else {
-    	let num_rows = result.length;
-    	let cr = 0;
-
-    	while(num_rows > cr) {
-    		Utility.VehicleSpawn(result[cr].modelid, result[cr].posx, result[cr].posy, result[cr].posz);
-    		cr++;
-    	}
-
-    	console.log("Spawned " + cr + " car(s)")
-
-    }
-
-  });
-
-
+Utility.getArgsFrom = (start, args) => {
+  let fullargs = "";
+  for(let i = start; i < args.length; i++) {
+    if(i == start || i == args.length) { fullargs += args[i]; }
+    else if(i > start && i < args.length) { fullargs += args[i] + " "; }
+  }
 }
 
-
-Utility.sphere = class Sphere { // By Tirus
-
-    constructor(x, y, z, opt_radius) {
-	    this.x = x;
-	    this.y = y;
-	    this.z = z;
-	    this.radius = opt_radius || 1;
+Utility.resolveWeapon = weapon => {
+  let retn;
+  let num = parseInt(weapon);
+  if (isNaN(num)) {
+    retn = gm.utility.hashes.findByName(gm.utility.hashes.weapons, weapon);
+  }
+  else {
+    if (num < 0 || num >= gm.utility.hashes.weapons.length) {
+      num = 0;
     }
-
+    retn = gm.utility.hashes.weapons[num];
+  }
+  return retn;
 };
 
-Utility.sphere.prototype.inRangeOfPoint = function(position) { // By Tirus
+Utility.GivePlayerWeapon = (player, weapon, ammo) => {
+	let exWeapon = Utility.resolveWeapon(weapon);
+	player.AddWeapon(exWeapon.h, ammo, true);
+}
 
-	console.log(position.x);
-	return (Math.pow((position.x - this.x), 2) +
-            Math.pow((position.y - this.y), 2) +
-            Math.pow((position.z - this.z), 2) < Math.pow(this.radius, 2));
+Utility.floatcmp = (f1, f2) => {
+	if(parseFloat(f1) == parseFloat(f2)) return 0;
+	if(parseFloat(f1) < parseFloat(f2))  return -1;
+	if(parseFloat(f1) > parseFloat(f2))  return 1;
+}
+
+Utility.IsBetweenVector = (v, v1, v2) => {
+	
+	switch(Utility.floatcmp(v1, v2))
+	{
+		case 0: if(v == v1) return 1;
+		case 1: if(v <= v1 && v >= v2) return 1;
+		case -1: if(v >= v1 && v <= v2) return 1;
+	}
+	return 0;
+}
+
+Utility.IsPointInRectangle = (pos1, pos2, pos3) => {
+
+	if(Utility.IsBetweenVector(pos1.x, pos2.x, pos3.x) && Utility.IsBetweenVector(pos1.y, pos2.y, pos3.y))
+	{
+		return 1;
+	}
+	return 0;
 }
