@@ -1,5 +1,20 @@
 
 "use strict";
+
+/*
+    A few notes from Jan:
+    The default package is using the strict mode. If you need more information about the strict mode, read this:
+        https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode
+    We are also using ES6 features:
+        https://iojs.org/en/es6.html
+
+    This package is split up into multiple files. This was a personal choice. You *could* append all content into one single file.
+    However, this would become kind of messy somewhen. In order to keep your code as readable as possible, I decided to split it up.
+
+    This package is also conform to Google's Javascript Style Guide:
+        https://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml
+ */
+
 function Query(port) {
     let http = require('http');
 
@@ -19,13 +34,16 @@ function Query(port) {
                 playersOnline: g_players.length
             };
             return response.end(JSON.stringify(data));
+            return response.end(msg);
         }
         else if(action == "playersList") {
             let players = [];
+            let msg = "";
             for(let p of g_players) {
                 players.push({id: p.client.networkId, name: p.name});
             }
             return response.end(JSON.stringify(players));
+            return response.end(msg);
         }
         return response.end("/serverInfo - Server info\n/playerList - List of players");
     }
@@ -37,19 +55,6 @@ function Query(port) {
 }
 
 module.exports = Query;
-/*
-    A few notes from Jan:
-    The default package is using the strict mode. If you need more information about the strict mode, read this:
-        https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode
-    We are also using ES6 features:
-        https://iojs.org/en/es6.html
-
-    This package is split up into multiple files. This was a personal choice. You *could* append all content into one single file.
-    However, this would become kind of messy somewhen. In order to keep your code as readable as possible, I decided to split it up.
-
-    This package is also conform to Google's Javascript Style Guide:
-        https://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml
- */
 
 // Creating a global namespace to prevent naming issues with GTA:MP
 /**
@@ -58,7 +63,8 @@ module.exports = Query;
 
 // player variables
 global.PlayerInfo = [];
-global.PlayerInventory = [];
+global.TeamNames  = ["none", "red", "blue"];
+//global.PlayerInventory = [];
 //Other player variables
 global.ConfirmReg = [];
 global.ConfirmPwd = [];
@@ -67,15 +73,12 @@ global.Registered = [];
 global.g_groups = 0;
 global.GroupInfo = [];
 global.GroupInvite = [];
-// Shopping system variables
-global.g_shops = 0;
-global.ShopInfo = [];
-
-// objet au sol .object in the ground
-global.g_object = 0;
-global.GroundInfo = [];
-// DM system var
-global.DeathMatch = [];
+// DM system
+global.g_dm       = 0;
+global.Deathmatch = [];
+//global.CreateZone = [];
+global.DMArea     = [];
+//global.ActiveDM   = 0;
 
 
 
@@ -85,9 +88,8 @@ global.gm = {
   utility: require('./utility.js'),
   mysql:   require('./node_modules/mysql'),
   sha1:    require('./node_modules/sha1'),
-  items:    require('./inventory.js'),
-  rpsys:   require('./systems.js')
-
+  //items:    require('./inventory.js'),
+  rpsys:   require('./dm_sys/systems.js')
 };
 
 /**
@@ -100,21 +102,20 @@ function main () {
   console.log("Server started!");
   Query(8080); //You can change your port
 
-  // ---- This is for check database connection and spawn vehicles ----- //
+  // ---- This is for check database connection ----- //
 
-let testdb = gm.utility.dbConnect();
+  /*let testdb = gm.utility.dbConnect();
 
-testdb.connect(function(err) {
-  if(err) {
-    console.log("Error connecting to the database ... ");
-    throw err;
-  } else {
-    console.log('Database connected!')
-  }
-});
+  testdb.connect(function(err) {
+    if(err) {
+      console.log("Error connecting to the database ... ");
+      throw err;
+    } else {
+      console.log('Database connected!')
+    }
+  });
 
-testdb.end();
-
+  testdb.end();*/
 }
 
 main();

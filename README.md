@@ -1,2 +1,2 @@
-# DeathMatch-Gamemode-
-Created my myami and daranix
+# BasicGamemode
+Created by Myami and Daranix

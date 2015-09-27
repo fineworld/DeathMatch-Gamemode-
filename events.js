@@ -116,8 +116,24 @@ Events.onPlayerCreated = player => {
     }
   }
 
-  player.SendChatMessage("Welcome to the server : ", new RGB(0, 255, 0));
-  player.SendChatMessage("<em>Write /help to see the commands</em>");
+  // Add default values to properties
+
+  global.PlayerInfo[player.name] = {
+    team: 0,
+    group: 0,
+    adminlevel: 0
+  }
+
+  global.DMArea[player.name] = -1;
+
+  /*Player.SendChatMessage("Welcome to the server : ", new RGB(0, 255, 0));
+  player.SendChatMessage("<em>Write /help to see the commands</em>");*/
+  player.SendChatMessage("Welcome to the server: " + player.name);
+  let msg = "";
+  for(let i = 1; i < TeamNames.length; i++) {
+    msg += TeamNames[i] + " " // Derp loop ^^
+  }
+  player.SendChatMessage("Use /teamchoice [ " + msg + " ]");
 };
 
 /**
@@ -127,7 +143,6 @@ Events.onPlayerCreated = player => {
  * @param {integer} reason the reason (hash)
  */
 Events.onPlayerDeath = (player, reason, killer) => {
-  let teamid = PlayerInfo[killer.name].team;
   let message = "~r~" + player.name + "~s~ ";
   if (typeof killer !== "undefined") {
     if (killer === player) {
@@ -139,18 +154,12 @@ Events.onPlayerDeath = (player, reason, killer) => {
         message += "has been run over by a vehicle (probably).";
       }
     }
-    TeamKills[teamid] += 1;
   } else {
     message += "died.";
   }
   for (let tempPlayer of g_players) {
     tempPlayer.graphics.ui.DisplayMessage(message);
   }
-  if(TeamKills[teamid] >= 150){
-
-
-
-  } // winner
 };
 
 /**
@@ -161,7 +170,7 @@ Events.onPlayerDeath = (player, reason, killer) => {
  * @param {Vector3f} aimPos aim position
  */
 Events.onPlayerShot = player => {
-  player.graphics.ui.DisplayMessage("~r~SHOTS FIRED");
+  //player.graphics.ui.DisplayMessage("~r~SHOTS FIRED");
 };
 
 /**
@@ -188,17 +197,17 @@ Events.onPlayerDestroyed = player => {
    PlayerInfo[player.name] = {
      id: 0,
      adminlvl: 0,
-     groupid: 0,
-     teamid: 0,
+     groupid: 0
 
    };
-   PlayerInventory[player.name] = {
-objects: [],
-objectsQuantity: [],
-weight: 0,
-maxWeight: 64
 
-};
+    PlayerInventory[player.name] = {
+      objects: [],
+      objectsQuantity: [],
+      weight: 0,
+      maxWeight: 64
+
+    };
 
 
    console.log(player.name + " is connected.");
@@ -265,14 +274,10 @@ maxWeight: 64
   PlayerInfo[player.name] = {
     id: dbData.id,
     adminlvl: dbData.adminlvl,
-    groupid: dbData.groupid,
-    teamid: dbData.teamid
-
-
+    groupid: dbData.groupid
   };
-
-
 };
+
 Events.onPlayerUpdate = (player, callback, info) => {
 
   info = typeof info !== 'undefined' ? info : true;
@@ -285,7 +290,6 @@ Events.onPlayerUpdate = (player, callback, info) => {
   let SQLQuery = "UPDATE users SET" +
   " adminlvl=" + PlayerInfo[player.name].adminlvl +
   " ,groupid=" + PlayerInfo[player.name].groupid +
-  " ,teamid=" + PlayerInfo[player.name].teamid +
   " WHERE id = " + PlayerInfo[player.name].id;
 
 
@@ -309,18 +313,34 @@ Events.updateAllPlayers = () => {
   let loggedPlayers = 0;
   if(g_players.length >= 1)
   {
-     console.log("Uploading all players info...");
+    let connection = gm.utility.dbConnect();
+    connection.connect();
+
+    console.log("Uploading all players info...");
     for (let player of g_players)
     {
       if(pLogged[player.name])
       {
-        Events.onPlayerUpdate(player,function(){},false);
+        //Events.onPlayerUpdate(player,function(){},false);
+        let jsonString = JSON.stringify(PlayerInfo[player.name].licenses);
+        let SQLQuery = "UPDATE users SET" +
+        " adminlvl=" + PlayerInfo[player.name].adminlvl +
+        " WHERE id = " + PlayerInfo[player.name].id;
+
+        connection.query(SQLQuery, function(err) {
+          if(err) {
+            gm.utility.print("An error ocurred trying to upload the info of " + player.name);
+            gm.utility.print("QUERY: " + SQLQuery);
+            gm.utility.print("[ERROR]: " + err);
+            //player.SendChatMessage(gm.utility.timestamp() + " An error ocurred trying to upload your player info, please contact and administrator");
+          }
+        });
+
         loggedPlayers++;
       }
     }
-
+    connection.end();
     console.log("info of all players (" + loggedPlayers + ") has been uploaded");
-
   }
 };
 
@@ -328,7 +348,7 @@ Events.updateAllPlayers = () => {
  * Called when a player enter in the area when he is not registered for him or when he join a match
  * @param {Player} player
  */
-Events.OnAreaEnter = (player) => {
+Events.OnAreaEnter = (player, areaid) => {
 
 
 };
@@ -337,23 +357,22 @@ Events.OnAreaEnter = (player) => {
  * @param {Player} player
  *
  */
-Events.OnAreaLeave = (player) => {
+Events.OnAreaLeave = (player, areaid) => {
 
 
 };
 /**
  * Called when a DM start
- * @param {Player} player
+ * @param {Player} index of array Deathmatch
  */
-Events.OnDeathMatchStart = (player) => {
-
+Events.OnDeathMatchStart = (index) => {
 
 };
 /**
  * Called when a DM end
- * @param {Player} player
+ * @param {index} index of array Deathmatch
  */
-Events.OnDeathMatchEnd = (player) => {
+Events.OnDeathMatchEnd = (index) => {
 
 
 };
